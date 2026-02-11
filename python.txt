@@ -1,0 +1,45 @@
+import json
+import os
+import wave
+ 
+import pyaudio
+from vosk import Model, KaldiRecognizer
+ 
+# 下载并解压模型
+if not os.path.exists("vosk-model-small-cn-0.22"):
+    print("请下载模型并解压到当前目录")
+    exit(1)
+ 
+wf = wave.open("1.wav", "rb")
+if wf.getnchannels() != 1 or wf.getsampwidth() != 2 or wf.getcomptype() != "NONE":
+    print("音频文件必须是单声道WAV格式，16位PCM编码")
+    exit(1)
+ 
+model = Model("./vosk-model-small-cn-0.22")
+rec = KaldiRecognizer(model, wf.getframerate())
+ 
+flag = 1
+while True:
+    if flag == 1:
+        data = wf.readframes(4000)
+        # flag = flag + 1
+    else:
+        audio = pyaudio.PyAudio()
+        audio_stream = audio.open(format=pyaudio.paInt16, channels=1, rate=16000, input=True)
+        data = audio_stream.read(4000)
+    # data = wf.readframes(1280)
+    # print(data)
+ 
+    if len(data) == 0:
+        break
+    if rec.AcceptWaveform(data):
+        pass
+        # print(rec.Result())
+    else:
+        pass
+        res = rec.PartialResult()
+        # print(type(res))
+        if (json.loads(res)["partial"]):
+            print(json.loads(res)["partial"])
+ 
+print(rec.FinalResult())
